@@ -57,24 +57,6 @@ class MarkdownReader:
         self.bind_events()
 
     def create_widgets(self):
-        # style configuration
-        # entry config
-        style.configure('info.TEntry')
-        # style and font menu config
-        style.configure('info.Outline.TMenubutton')
-        # toggle bold
-        style.configure('bold.info.TButton', font=("Arial", 10, "bold"))
-        # toggle italic
-        style.configure('italic.info.TButton', font=("Arial", 10, "italic"))
-        # toggle underline
-        style.configure('underline.info.TButton', font=("Arial", 10, "underline"))
-        # insert table
-        style.configure('insert.info.TButton', font=("Arial", 12))
-        # choose fg color
-        style.configure('fg.info.TButton')
-        # highlight
-        style.configure('bg.info.Tbutton', font=("Arial", 10))
-
         style = ttkb.Style()
         menubar = tk.Menu(self.root)
         filemenu = tk.Menu(menubar, tearoff=0)
@@ -116,7 +98,7 @@ class MarkdownReader:
         # Style dropdown
         self.style_var = tk.StringVar(value="Normal text")
         style_options = ["Normal text", "Heading 1", "Heading 2", "Heading 3"]
-        
+        style.configure('info.Outline.TMenubutton')
         # style_menu = tk.OptionMenu(toolbar, self.style_var, *style_options, command=self.apply_style)
         style_menu = ttkb.Menubutton(toolbar, text=self.style_var, style='info.Outline.TMenubutton')
         style_menu.config(width=12)
@@ -140,9 +122,26 @@ class MarkdownReader:
         # Font size
         self.font_size_var = tk.IntVar(value=14)
         button_width = 3
+        # entry config
+        style.configure('info.TEntry')
         ttkb.Button(toolbar, text="-", bootstyle=(DANGER, OUTLINE), width=button_width, command=lambda: self.change_font_size(-1)).pack(side=tk.LEFT, padx=5)
         ttkb.Entry(toolbar, textvariable=self.font_size_var, width=3, style='info.TEntry', justify='center').pack(side=tk.LEFT)
         ttkb.Button(toolbar, text="+", bootstyle=(SUCCESS, OUTLINE), width=button_width, command=lambda: self.change_font_size(1)).pack(side=tk.LEFT, padx=5)
+
+        # font configuration
+        
+        # toggle bold
+        style.configure('bold.info.TButton', font=("Arial", 10, "bold"))
+        # toggle italic
+        style.configure('italic.info.TButton', font=("Arial", 10, "italic"))
+        # toggle underline
+        style.configure('underline.info.TButton', font=("Arial", 10, "underline"))
+        # insert table
+        style.configure('insert.info.TButton', font=("Arial", 12))
+        # choose fg color
+        style.configure('fg.info.TButton')
+        # highlight
+        style.configure('bg.info.Tbutton', font=("Arial", 10))
 
         ttkb.Button(toolbar, text="B", style='bold.info.TButton', width=button_width, command=self.toggle_bold).pack(side=tk.LEFT, padx=5)
         ttkb.Button(toolbar, text="I", style='italic.info.Tbutton', width=button_width, command=self.toggle_italic).pack(side=tk.LEFT, padx=5)
