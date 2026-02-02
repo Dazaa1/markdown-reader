@@ -57,6 +57,7 @@ class MarkdownReader:
         self.bind_events()
 
     def create_widgets(self):
+        style = ttkb.Style()
         menubar = tk.Menu(self.root)
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="New", command=self.new_file)
@@ -97,24 +98,38 @@ class MarkdownReader:
         # Style dropdown
         self.style_var = tk.StringVar(value="Normal text")
         style_options = ["Normal text", "Heading 1", "Heading 2", "Heading 3"]
-        style_menu = tk.OptionMenu(toolbar, self.style_var, *style_options, command=self.apply_style)
+        style.configure('info.Outline.TMenubutton')
+        # style_menu = tk.OptionMenu(toolbar, self.style_var, *style_options, command=self.apply_style)
+        style_menu = ttkb.Menubutton(toolbar, text=self.style_var, style='info.Outline.TMenubutton')
         style_menu.config(width=12)
         style_menu.pack(side=tk.LEFT, padx=2, pady=2)
+        menu_ = tk.Menu(style_menu, tearoff=0)
+        for s in style_options:
+            menu_.add_radiobutton(label=s, variable=self.style_var, command=lambda s=s: self.apply_style(s))
+        style_menu['menu'] = menu_
         # Font family dropdown
         fonts = sorted(set(tkinter.font.families()))
-        self.font_var = tk.StringVar(value="Consolas")
-        font_menu = tk.OptionMenu(toolbar, self.font_var, *fonts, command=self.apply_font)
+        self.font_var = ttkb.StringVar(value="Consolas")
+        font_menu = ttkb.Menubutton(toolbar, text=self.font_var, style='info.Outline.TMenubutton')
+        
         font_menu.config(width=10)
         font_menu.pack(side=tk.LEFT, padx=2)
+        
+        menu = tk.Menu(font_menu, tearoff=0)
+        for f in fonts[:20]:
+            menu.add_radiobutton(label=f, variable=self.font_var, command=lambda f=f: self.apply_font(f))
+        font_menu['menu'] = menu
         # Font size
         self.font_size_var = tk.IntVar(value=14)
         button_width = 3
-        ttkb.Button(toolbar, text="-", bootstyle=(DANGER, OUTLINE), width=button_width, command=lambda: self.change_font_size(-1)).pack(side=tk.LEFT, padx=2)
-        tk.Entry(toolbar, textvariable=self.font_size_var, width=3, justify='center').pack(side=tk.LEFT)
-        ttkb.Button(toolbar, text="+", bootstyle=(SUCCESS, OUTLINE), width=button_width, command=lambda: self.change_font_size(1)).pack(side=tk.LEFT, padx=2)
+        # entry config
+        style.configure('info.TEntry')
+        ttkb.Button(toolbar, text="-", bootstyle=(DANGER, OUTLINE), width=button_width, command=lambda: self.change_font_size(-1)).pack(side=tk.LEFT, padx=5)
+        ttkb.Entry(toolbar, textvariable=self.font_size_var, width=3, style='info.TEntry', justify='center').pack(side=tk.LEFT)
+        ttkb.Button(toolbar, text="+", bootstyle=(SUCCESS, OUTLINE), width=button_width, command=lambda: self.change_font_size(1)).pack(side=tk.LEFT, padx=5)
 
         # font configuration
-        style = ttkb.Style()
+        
         # toggle bold
         style.configure('bold.info.TButton', font=("Arial", 10, "bold"))
         # toggle italic
