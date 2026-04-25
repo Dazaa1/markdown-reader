@@ -1,236 +1,185 @@
 # Markdown Reader
 
-Markdown Reader is a clean and intuitive Markdown editor/reader with real-time preview support and dark mode toggle. It is compatible with macOS and Windows desktop environments and built with pure Python and Tkinter.
+<img width="1320" height="723" alt="Image" src="https://github.com/user-attachments/assets/01271258-68f1-4b34-ae08-c94daf80af43" />
 
 ---
 
-## Features
+Modern Markdown editor with a Next.js UI, FastAPI backend, AI features, and desktop packaging via Tauri.
 
-* Tabbed Markdown editing with real-time HTML preview.
-* **AI-Powered Translation**: Translate Markdown documents while preserving formatting (supports OpenAI Compatible, OpenRouter, OpenAI, and Anthropic).
-* **Built-in AI Agent Chat**: A dockable in-app chat panel can read current document context and suggest/apply edits.
-* **AI Task Automation Templates**: Run reusable templates for formatting, TOC generation, summaries, and code-block cleanup.
-* **Approval/Reject Workflow**: Every AI-proposed change can be explicitly applied or rejected from the panel.
-* **AI Audit Trail**: Proposed/applied/rejected/undone AI actions are logged for auditing and rollback tracking.
-* **API Key Management**: Missing or rejected provider keys trigger an in-app dialog, and keys are saved in the OS credential store.
-* **Progressive Translation Rendering**: Long translations are split into smaller chunks, inserted into the editor as they complete, auto-scrolled into view, and tracked with a progress bar.
-* Dark mode toggle.
-* **Advanced Table Editor**: Interactive table insertion with customizable rows and columns.
-* **Dual PDF Conversion**: Fast PyMuPDF mode or advanced [Docling](https://github.com/docling-project/docling) mode for complex documents.
-* Built with pure Python, Tkinter, and ttkbootstrap — cross-platform.
-* Can be bundled as a macOS app using `py2app`.
-* Opens preview automatically and avoids multiple browser tabs for a smoother experience.
-* Multi-provider AI failover: Automatically switches to fallback providers on rate-limit/auth/server errors.
+Planning notes: [scripts/ProjectPlan.md](scripts/ProjectPlan.md)
 
 ---
 
-## Editor Overview
+## Current Architecture
 
-<img width="1428" height="737" alt="Image" src="https://github.com/user-attachments/assets/4f584f5b-dd1a-4d74-9a99-ca2cd90a9994" />
+### Development mode
+
+- Launches a real Tauri desktop window instead of a browser tab
+- Frontend still runs from the Next.js dev server on `http://localhost:3000`
+- Backend runs from the FastAPI dev server on `http://127.0.0.1:8000`
+- Recommended start command: `./scripts/dev-tauri.sh`
+- In this mode, the Tauri shell talks to the fixed dev backend on port `8000`
+- The packaged Python sidecar is not used in debug mode
+
+### Desktop (packaged) mode
+
+- Users launch one app only: `Markdown Reader.app`
+- Python backend is bundled as a sidecar process
+- Backend port is dynamically assigned by the OS at runtime (no hard-coded 8000/3000 in desktop mode)
+- Frontend discovers backend port through a Tauri command
+
+This avoids port collisions with local services and allows multiple app instances more safely.
 
 ---
 
-## Preview Overview
+## Repository Layout
 
-<img width="1417" height="474" alt="Image" src="https://github.com/user-attachments/assets/9a0006ed-d269-428b-a41f-e512cc7ba9c9" />
-
----
-
-## Installation & Usage
-
-#### 1. Clone the repository
-
-```bash
-git clone https://github.com/petertzy/markdown-reader.git
-cd markdown-reader
-```
-
-#### 2. Create a virtual environment (recommended)
-
-```bash
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# .\venv\Scripts\activate  # Windows (cmd/powershell)
-```
-
-#### 3. Install dependencies
-
-For Mac users, you should first complete the preparation steps described in the [PrepareForMacUser](./doc/PrepareForMacUser.md) file.
-
-For Windows users, WeasyPrint requires additional system libraries. Complete the preparation steps described in the [PrepareForWindowsUser](./doc/PrepareForWindowsUser.md) file before running `pip install`.
-
-```bash
-pip install -r requirements.txt
+```text
+MarkdownReader/
+├── backend/                    # FastAPI app and routers
+├── frontend/                   # Next.js + Tauri desktop shell
+├── markdown_reader/            # Existing Python business logic (preserved)
+├── scripts/dev-tauri.sh        # Recommended native dev startup
+├── tests/                      # Unit/integration tests
+├── README_OLD.MD               # Legacy tkinter-era documentation
+└── pyproject.toml
 ```
 
 ---
 
-## Running the Application
+## Quick Start (Development)
+
+### Prerequisites
+
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv)
+- Node.js 18+
+
+### 1) Install dependencies
 
 ```bash
-python app.py
+uv sync
+cd frontend && npm install
 ```
 
-### How to Use
+> **Note for contributors:** `pre-commit` is required for git hooks (code linting/formatting runs on every commit).
+> If you see `No module named pre_commit` when committing, run:
+>
+> ```bash
+> uv add --dev pre-commit
+> uv run pre-commit install
+> ```
 
-* **Open File**: Choose `.md`, `.markdown`, `.html`, `.htm`, or `.pdf` from the "File → Open File" menu.
-* **Open with Double-Click**: Double-clicking a `.md` file opens it directly with the app and displays the document with a real-time preview.
-* **Editor-Only Mode**: To open a `.md` file in the editor without automatically generating a web preview, configure the double-click behavior via "Settings → Open Behavior → Editor Only".
-* **Dark Mode**: Toggle via "View → Toggle Dark Mode".
-* **Preview**: Automatically opens in your web browser, only one tab is opened per session.
-* **AI Translation**: 
-  - Translate selected text: "Edit → Translate with AI → Translate Selected Text with AI"
-  - Translate full document: "Edit → Translate with AI → Translate Full Document with AI"
-  - Select source and target languages from dropdown menus
-  - Configure provider/model/API keys: "Settings → AI Provider & API Keys..."
-  - If a key is missing or rejected, the app prompts for the correct provider key and stores it in the OS credential store
-  - Large translations appear progressively in the editor with automatic scrolling and a visible progress bar
-* **AI Agent Chat Panel**:
-  - Show/hide: "View → Show AI Agent Panel"
-  - You can type natural-language requests directly in the chat box; no special command syntax is required
-  - The AI agent can automatically prepare edit suggestions for tasks such as summaries, formatting, TOC generation, and code-block fixes
-  - Typical chat requests:
-    - `generate summary`
-    - `generate table of contents`
-    - `format this section`
-    - `format code blocks and correct syntax`
-  - Supports commands like "format this section", "generate summary", and "generate table of contents"
-  - Built-in automation templates can trigger repetitive editor tasks quickly
-  - Can format and fix Markdown code blocks (including unclosed fences)
-  - Context scope toggle: "Full document" or "Selection only"
-  - Uses current document and/or selected text as context based on the selected scope
-  - Workflow: send a natural-language request -> review AI preview -> click "Apply Suggestion" to apply
-  - AI suggestions can be applied or rejected with confirmation and validation checks
-  - "Undo AI Task" allows one-click rollback of the latest applied AI change
-  - "Audit Log" shows recent AI automation events for traceability
-  - Chat history is stored per document and restored automatically
-* **Table Insertion**: Use "Table → Insert Table" to create custom tables with interactive cell editing.
-* **PDF Conversion Modes**: 
-  - Fast mode (default): Uses PyMuPDF for quick extraction
-  - Advanced mode: Enable "Tools → Use Advanced PDF Conversion (Docling)" for complex documents
-  - View mode info: "Tools → PDF Converter Info"
-
----
-
-## Packaging as a macOS App (Optional)
-
-To bundle this app as a `.app`, use the included `setup.py` script:
-
-### Build the App
+### 2) Configure frontend env
 
 ```bash
-rm -rf build dist
-python setup.py py2app
+cp frontend/.env.local.example frontend/.env.local
 ```
 
-The generated app will be located in the `dist/` folder. You can launch it by double-clicking. To use it like a regular app, move it to your Applications folder.
+### 3) Start services
 
----
-
-## Exit the Virtual Environment
 ```bash
-deactivate
+./scripts/dev-tauri.sh
 ```
 
-## Submit Changes to Git
+Open:
+
+- Backend docs: http://127.0.0.1:8000/docs
+- Tauri native app window: launched automatically by `./scripts/dev-tauri.sh`
+
+### 4) Stop services
+
+Press `Ctrl+C` in the terminal running `./scripts/dev-tauri.sh`.
+
+---
+
+## Desktop Build (Single App)
+
+The desktop build produces one user-facing app and bundles the backend internally.
+
+### 1) Install Tauri toolchain
+
+Follow OS prerequisites:
+
+- https://tauri.app/start/prerequisites/
+
+Install frontend tooling:
+
 ```bash
-git add .
-git commit -m "Update"  # Replace "Update" with a meaningful commit message
-git push
+cd frontend
+npm install
+npm install -D @tauri-apps/cli @tauri-apps/api
 ```
 
-## Technical Details
+### 2) Build backend sidecar executable
 
-* GUI: `tkinter`, `ttkbootstrap`
-* Markdown Engine: `markdown2`
-* HTML Preview: Dynamically generated HTML opened in the default browser
-* File Conversion: `html2text` for HTML, `PyMuPDF` and `docling` for PDF import (`pypdf` is used as a fallback when PyMuPDF is unavailable)
-* PDF Export: `weasyprint`
-* AI Translation: `requests` for API communication with OpenAI Compatible, OpenRouter, OpenAI, and Anthropic
-* Configuration: Per-user settings JSON for provider/model (macOS `~/Library/Application Support/MarkdownReader/settings.json`; Windows `%APPDATA%/MarkdownReader/settings.json`; Linux `~/.config/markdown-reader/settings.json`) plus OS credential storage for API keys (`keyring`)
-* Auto-failover: Automatically switches AI providers when the primary provider returns rate-limit/auth/server errors
+```bash
+cd ..
+uv run pyinstaller -F -n markdown-reader-backend backend/main.py
+```
 
----
+### 3) Copy sidecar binary into Tauri
 
-## System Requirements:
-Python >= 3.10
+For Apple Silicon macOS:
 
----
+```bash
+cp dist/markdown-reader-backend frontend/src-tauri/binaries/markdown-reader-backend-aarch64-apple-darwin
+chmod +x frontend/src-tauri/binaries/markdown-reader-backend-aarch64-apple-darwin
+```
 
-## AI-powered translation:
-To enable AI-powered translation features, you need to set up API keys:
+For other targets, use the corresponding Rust target-triple suffix.
 
-1. Open `Settings -> AI Provider & API Keys...`.
-2. Choose provider and model.
-3. Enter API key and save.
-4. If you choose `OpenAI Compatible`, you can also choose a Base URL option (`Navidia` or `Groq`).
+### 4) Build the desktop app
 
-The app stores provider and model in a per-user JSON file:
+```bash
+cd frontend
+npx tauri build --bundles app
+```
 
-- macOS: `~/Library/Application Support/MarkdownReader/settings.json`
-- Windows: `%APPDATA%/MarkdownReader/settings.json`
-- Linux: `~/.config/markdown-reader/settings.json`
+Output path (macOS):
 
-**How to get API keys:**
-- **OpenRouter** (recommended for free tier): [openrouter.ai](https://openrouter.ai/)
-- **OpenAI**: [platform.openai.com](https://platform.openai.com/)
-- **Anthropic**: [console.anthropic.com](https://console.anthropic.com/)
-- **OpenAI Compatible**: Create an API key from your chosen compatible provider console, then select the matching Base URL preset in this app:
-  - **Navidia preset**: [NVIDIA Integrate](https://build.nvidia.com/)
-  - **Groq preset**: [Groq Console](https://console.groq.com/keys)
-
-API keys are saved in the OS credential store (Keychain on macOS, Credential Manager on Windows, Secret Service/KWallet on Linux when available).
-
-The app will automatically switch to a fallback provider when the primary provider returns rate-limit/auth/server errors.
+- `frontend/src-tauri/target/release/bundle/macos/Markdown Reader.app`
 
 ---
 
-## License
-
-This project is licensed under the **MIT License**.  
-See the [LICENSE](LICENSE.md) file for the full text.
+<img width="264" height="139" alt="Image" src="https://github.com/user-attachments/assets/18091038-758b-40cd-ad1f-08700a4e8b92" />
 
 ---
 
-## Contributing
+## API Surface (Backend)
 
-All contributions are welcome, including:
+Main groups:
 
-- Bug reports
-- Feature suggestions
-- Pull requests
-- Documentation improvements
+- `/api/files/*`
+- `/api/markdown/*`
+- `/api/ai/*`
+- `/api/export/*`
 
-Please see our [CONTRIBUTING](CONTRIBUTING.md) guide for more details on how to get started, submit changes, or report issues.
+Health endpoint:
+
+- `GET /api/health`
+
+Interactive docs (dev mode):
+
+- Swagger: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
 
 ---
 
-## Contributors
+## Notes About Ports
 
-We are grateful to all our contributors who have made this project better! Special thanks to:
+- In development mode, fixed ports (`3000` and `8000`) are used for convenience.
+- In packaged desktop mode, backend uses a dynamically assigned local port.
+- This is intentional and follows common desktop-app sidecar practices.
 
-**Major Contributors:**
-- [@MatthewEmer](https://github.com/MatthewEmer) - 22 commits
-- [@Dazaa1](https://github.com/Dazaa1) - 10 commits
-- [@PMaruthiPrasad](https://github.com/PMaruthiPrasad) - Help menu feature
-- [@lwu1822](https://github.com/lwu1822) - MkDocs documentation setup
+---
 
-**All Contributors:**
-See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the complete list of all contributors including:
-- [@larikardoso](https://github.com/larikardoso)
-- [@metergames](https://github.com/metergames)
-- [@gustavo-szesz](https://github.com/gustavo-szesz)
-- [@ferrandj](https://github.com/ferrandj)
-- [@nwankwolinus](https://github.com/nwankwolinus)
-- [@Xavi1](https://github.com/Xavi1)
-- [@CarlosHCS001](https://github.com/CarlosHCS001)
-- [@jonaebel](https://github.com/jonaebel)
-- [@Poorna-Raj](https://github.com/Poorna-Raj)
-- [@NalinKaushik](https://github.com/NalinKaushik)
-- [@apoorvdarshan](https://github.com/apoorvdarshan)
-- [@raza-khan0108](https://github.com/raza-khan0108)
-- [@O-sama12](https://github.com/O-sama12)
-- And many more!
+## Legacy UI
 
-For a detailed breakdown, please visit [CONTRIBUTORS.md](CONTRIBUTORS.md).
+The old tkinter entrypoint is preserved:
 
+```bash
+uv run python app.py
+```
+
+Legacy docs: [README_OLD.MD](README_OLD.MD)
